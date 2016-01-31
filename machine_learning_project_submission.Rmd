@@ -10,9 +10,12 @@ The goal of this project is to predict the label quantifying how well a physical
 
 ## Download,Read and Clean/Preprocess the datasets
 ```{r downloadAndLoadDS, echo=TRUE, cache=TRUE}
-download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", "./TrainingData.csv", method = "curl")
-download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", "./TestData.csv", method = "curl")
-## A quick peek at the data showed that there are invalid values like #DIV/0! and empty strings. We interpret them as NAs while reading the data.
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", 
+              "./TrainingData.csv", method = "curl")
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", 
+              "./TestData.csv", method = "curl")
+## A quick peek at the data showed that there are invalid values like #DIV/0! and empty strings. 
+## We interpret them as NAs while reading the data.
 dfTrain <- read.table("./TrainingData.csv", sep=",", header=TRUE, na.strings=c("NA","#DIV/0!", ""))
 dfTest <- read.table("./TestData.csv", sep=",", header=TRUE, na.strings=c("NA","#DIV/0!", ""))
 ```
@@ -60,7 +63,9 @@ Next , we build a random forest model using dfTrainA and evaluate the model.
 
 ```{r randomForest, echo=TRUE, cache=TRUE}
 library(randomForest)
-rfm <- train(classe ~ ., data=dfTrainA, method="rf", trControl=trainControl(method="cv", number=3, verboseIter=FALSE))
+rfm <- train(classe ~ ., data=dfTrainA, 
+             method="rf", 
+             trControl=trainControl(method="cv", number=3, verboseIter=FALSE))
 rfm$finalModel
 ```
 
@@ -77,7 +82,10 @@ From the confusion matrix results above , the random forest model yields us an a
 ##Also , because the random forest model is computationally
 ##intensive , we are setting 'cache=TRUE' for all computationally
 ##intensive blocks in R markdown.
-predictionModel <- train(classe ~ ., data=dfTrain, method="rf", trControl=trainControl(method="cv", number=3, verboseIter=FALSE))
+predictionModel <- train(classe ~ ., 
+                         data=dfTrain, 
+                         method="rf", 
+                         trControl=trainControl(method="cv", number=3, verboseIter=FALSE))
 ```
 
 ## Test Set prediction
