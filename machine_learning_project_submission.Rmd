@@ -1,0 +1,92 @@
+---
+title: 'Practical Machine Learning: Project'
+author: "RK"
+date: "January 30, 2016"
+output: html_document
+---
+
+## Introduction
+The goal of this project is to predict the label quantifying how well a physical activity is performed by a participant using a test data set that consists of accelerometer readings from devices such as Fitbit placed strategically across the participant's body. The training data set given to us consists of accelerometer readings along with the value of the quantifying label.
+
+## Download,Read and Clean/Preprocess the datasets
+```{r downloadAndLoadDS, echo=TRUE, cache=TRUE}
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", "./TrainingData.csv", method = "curl")
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", "./TestData.csv", method = "curl")
+## A quick peek at the data showed that there are invalid values like #DIV/0! and empty strings. We interpret them as NAs while reading the data.
+dfTrain <- read.table("./TrainingData.csv", sep=",", header=TRUE, na.strings=c("NA","#DIV/0!", ""))
+dfTest <- read.table("./TestData.csv", sep=",", header=TRUE, na.strings=c("NA","#DIV/0!", ""))
+```
+
+The first seven columns don't specify any accelerometer data and so they won't contrubute towards the prediction . Removing them here ->
+
+```{r removeSevenColumns, echo=TRUE}
+dfTrain <- dfTrain[,-(1:7)]
+## Repeat for the test data set
+dfTest <- dfTest[,-(1:7)]
+```
+
+Next , we remove columns whose values are almost always NA .
+
+```{r removeNAColumns, echo=TRUE}
+flag <- sapply(dfTrain, function(x) mean(is.na(x))) > 0.80
+dfTrain <- dfTrain[,flag==FALSE]
+## Repeat for the test data set. Remove the same variables in the
+## test data set that we removed in the train data set.We are using
+## just dfTrain as an argument in sapply above and using the same flag
+## to filter the test data set.
+dfTest <- dfTest[,flag==FALSE]
+```
+
+Also , let us set the seed for reproducability before moving ahead
+
+```{r setSeed, echo=TRUE}
+set.seed(2016)
+```
+
+## Partition the training data set
+
+Next , we partition the training data set into two parts that would later help us find the accuracy and the out-of-sample error using a confusion matrix.
+
+```{r partitionData, echo=TRUE}
+library(caret)
+trainingDataMatrix <- createDataPartition(dfTrain$classe, p=0.75, list=FALSE)
+dfTrainA <- dfTrain[trainingDataMatrix, ]
+dfTrainB <- dfTrain[-trainingDataMatrix, ]
+```
+
+## Random Forest Model
+
+Next , we build a random forest model using dfTrainA and evaluate the model.
+
+```{r randomForest, echo=TRUE, cache=TRUE}
+library(randomForest)
+rfm <- train(classe ~ ., data=dfTrainA, method="rf", trControl=trainControl(method="cv", number=3, verboseIter=FALSE))
+rfm$finalModel
+```
+
+Now , we evaluate the above model by predicting "classe" using dfTrainB and use the confusion matrix to get an estimate of the accuracy.
+
+```{r modelEval, echo=TRUE, cache=TRUE}
+confusionMatrix(dfTrainB$classe, predict(rfm, newdata=dfTrainB))
+```
+
+From the confusion matrix results above , the random forest model yields us an accuracy of 0.9935 and so we continue with using this model for our prediction . 
+
+```{r fullTraining, echo=TRUE, cache=TRUE}
+##Train the entire dfTrain set using our selected model.
+##Also , because the random forest model is computationally
+##intensive , we are setting 'cache=TRUE' for all computationally
+##intensive blocks in R markdown.
+predictionModel <- train(classe ~ ., data=dfTrain, method="rf", trControl=trainControl(method="cv", number=3, verboseIter=FALSE))
+```
+
+## Test Set prediction
+
+Finally , the selected model is applied to the test data to predict the labels . 
+
+```{r predictionFinal , echo=TRUE, cache=TRUE}
+testDataPredictions <- predict(predictionModel, newdata=dfTest)
+testDataPredictions
+```
+
+
